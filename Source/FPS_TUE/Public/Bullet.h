@@ -18,6 +18,10 @@ public:
 	ABullet();
 
 protected:
+	virtual void PreInitializeComponents() override;
+	
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -36,4 +40,8 @@ public:
 	// 움직임을 다뤄줄 컴포넌트
 	UPROPERTY(VisibleAnywhere, Category = Movement)
 	class UProjectileMovementComponent* movement;
+
+	// 총알속도
+	UPROPERTY(EditDefaultsOnly, Category=Speed)
+	float speed = 5000;
 };

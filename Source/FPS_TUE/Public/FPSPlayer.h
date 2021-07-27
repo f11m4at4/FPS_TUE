@@ -40,6 +40,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = PlayerMove)
 	class UPlayerMove* playerMove;
 
+	UPROPERTY(VisibleAnywhere, Category = PlayerFire)
+	class UPlayerFire* playerFire;
+
 	// 사용자 입력처리를 담당할 델리게이트
 	FPlayerInputDelegate OnInputDelegate;
 };

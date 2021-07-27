@@ -30,14 +30,39 @@ ABullet::ABullet()
 	movement->bShouldBounce = true;
 	movement->Bounciness = 0.3f;
 	// 속도
-	movement->MaxSpeed = 5000;
-	movement->InitialSpeed = 5000;
+	movement->MaxSpeed = speed;
+	movement->InitialSpeed = speed;
+}
+
+void ABullet::PreInitializeComponents()
+{
+	Super::PreInitializeComponents();
+
+	
+}
+
+// 액터의 특정 속성값을 수정하면 호출되는 함수(이벤트)
+// FPropertyChangedEvent -> 수정된 속성의 정보
+void ABullet::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	// 만약 speed 가 변경됐으면
+	if(PropertyChangedEvent.GetPropertyName() == TEXT("speed"))
+	{		
+		// movement 에 적용하고 싶다.
+		// 속도
+		movement->MaxSpeed = speed;
+		movement->InitialSpeed = speed;
+	}
 }
 
 // Called when the game starts or when spawned
 void ABullet::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// 생명력
+	SetLifeSpan(3);
+
 	
 }
 

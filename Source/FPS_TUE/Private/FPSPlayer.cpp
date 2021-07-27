@@ -7,6 +7,7 @@
 #include <Components/CapsuleComponent.h>
 #include <Components/SkeletalMeshComponent.h>
 #include "PlayerMove.h"
+#include "PlayerFire.h"
 
 // Sets default values
 AFPSPlayer::AFPSPlayer()
@@ -25,6 +26,8 @@ AFPSPlayer::AFPSPlayer()
 	bodyMesh->SetupAttachment(fpsCamera);
 
 	playerMove = CreateDefaultSubobject<UPlayerMove>(TEXT("PlayerMove"));
+
+	playerFire = CreateDefaultSubobject<UPlayerFire>(TEXT("PlayerFire"));
 
 
 	// 만들어질 때 동적으로 skeletalMesh 로드하여 할당하기
