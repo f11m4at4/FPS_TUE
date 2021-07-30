@@ -7,6 +7,8 @@
 #include <EngineUtils.h>
 #include "Enemy.h"
 #include <DrawDebugHelpers.h>
+#include "FPS_TUE.h"
+#include <TimerManager.h>
 
 // Sets default values for this component's properties
 UEnemyFSM::UEnemyFSM()
@@ -68,9 +70,6 @@ void UEnemyFSM::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 		break;
 	case EEnemyState::Attack:
 		AttackState();
-		break;
-	case EEnemyState::Damage:
-		DamageState();
 		break;
 	case EEnemyState::Die:
 		DieState();
@@ -140,21 +139,74 @@ void UEnemyFSM::MoveState()
 	{
 		// 3. 상태를 공격으로 전환하고 싶다.
 		m_state = EEnemyState::Attack;
+		currentTime = attackDelayTime;
 	}
 	/*FVector P0 = GetOwner()->GetActorLocation();
 	FVector P = P0 + direction * 500 * GetWorld()->DeltaTimeSeconds;
 	GetOwner()->SetActorLocation(P, true);*/
 }
 
+// 일정시간에 한번씩 공격하고 싶다.
+// 콘솔에 출력
+// 필요속성 : 공격대기시간
 void UEnemyFSM::AttackState()
 {
+	// 일정시간에 한번씩 공격하고 싶다.
+	// 1. 시간이 흘렀으니까
+	currentTime += GetWorld()->DeltaTimeSeconds;
+	// 2. 공격시간이 됐으니까.
+	if(currentTime > attackDelayTime)
+	{
+		// 3. 콘솔에 공격을 출력하고 싶다.
+		PRINTLOG(TEXT("Attack!!!"));
+		// 경과시간 초기화
+		currentTime = 0;
+	}
+
+	// 도망가면 상태를 Move 로 전환하고 싶다.
+	// -> 나와 타겟과의 거리가 공격범위를 벗어나면	
+	// 1. 타겟과의 거리를 알아야한다.
+	float distance = FVector::Dist(target->GetActorLocation(), me->GetActorLocation());
+	if (distance > attackRange)
+	{
+		m_state = EEnemyState::Move;
+	}
 }
 
+// 일정시간 기다렸다가 상태를 Idle 로 전환하고 싶다.
+// 필요속성 : 피격대기시간
 void UEnemyFSM::DamageState()
 {
+	m_state = EEnemyState::Idle;
+	currentTime = 0;
+	// 일정시간 기다렸다가 상태를 Idle 로 전환하고 싶다.
+	// 1. 시간이 흘렀으니까
+	//currentTime += GetWorld()->DeltaTimeSeconds;
+	//// 2. 대기시간이 됐으니까
+	//if(currentTime > damageDelayTime)
+	//{
+	//	// 3. 상태를 Idle 로 전환하고 싶다.
+	//	m_state = EEnemyState::Idle;
+	//	// Idle 일때 경과시간이 0부터 되도록 처리하겠다.
+	//	currentTime = 0;
+	//}
 }
 
 void UEnemyFSM::DieState()
 {
+}
+
+// 피격을 받았을 때 처리할 함수	
+void UEnemyFSM::OnDamageProcess()
+{
+	// 상태를 Damage 로 전환하고 싶다.
+	m_state = EEnemyState::Damage;
+	currentTime = 0;
+
+	// 알람맞춰 놓고 싶다.
+	// -> 피격 대기 시간만큼 기다리는 알람
+
+	FTimerHandle damagTimer;
+	GetWorld()->GetTimerManager().SetTimer(damagTimer, this, &UEnemyFSM::DamageState, damageDelayTime, false);
 }
 

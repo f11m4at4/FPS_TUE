@@ -57,10 +57,22 @@ public:
 	UPROPERTY(EditAnywhere, Category = FSM)
 	float attackRange = 200;
 
+	// 필요속성 : 공격대기시간
+	UPROPERTY(EditAnywhere, Category=FSM)
+	float attackDelayTime = 2;
+
+	// 필요속성 : 피격대기시간
+	UPROPERTY(EditAnywhere, Category = FSM)
+	float damageDelayTime = 2;
+
 private:
 	void IdleState();
 	void MoveState();
 	void AttackState();
 	void DamageState();
 	void DieState();
+
+public:
+	// 피격을 받았을 때 처리할 함수	
+	void OnDamageProcess();
 };
