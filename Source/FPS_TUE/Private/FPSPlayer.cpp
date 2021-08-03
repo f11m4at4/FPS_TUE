@@ -62,5 +62,7 @@ void AFPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 	// 등록된 델리게이트 함수 모조리 실행해 주기
 	OnInputDelegate.Broadcast(PlayerInputComponent);
+
+	
 }
 

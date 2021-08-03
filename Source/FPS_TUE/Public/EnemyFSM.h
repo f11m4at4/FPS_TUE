@@ -65,6 +65,24 @@ public:
 	UPROPERTY(EditAnywhere, Category = FSM)
 	float damageDelayTime = 2;
 
+	// hp
+	UPROPERTY(EditAnywhere, Category=FSM)
+	int hp = 3;
+
+	// Damage 받을 때 뒤로 밀릴 힘
+	UPROPERTY(EditAnywhere, Category = KNOCKBACK)
+	float knockback = 500;
+
+	// Damage 받을 때 넉백 종료 위치
+	UPROPERTY()
+	FVector knockbackPos;
+
+	UPROPERTY(EditAnywhere, Category = KNOCKBACK)
+	float knockbackSpeed = 20;
+
+	UPROPERTY(EditAnywhere, Category = KNOCKBACK)
+	float knockbackRange = 20;
+	
 private:
 	void IdleState();
 	void MoveState();
@@ -74,5 +92,5 @@ private:
 
 public:
 	// 피격을 받았을 때 처리할 함수	
-	void OnDamageProcess();
+	void OnDamageProcess(FVector shootDirection);
 };

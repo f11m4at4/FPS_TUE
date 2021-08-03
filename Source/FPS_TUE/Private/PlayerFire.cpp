@@ -102,8 +102,7 @@ void UPlayerFire::Fire()
 		// Enemy 의 상태를 Damage 로 전환
 		if (enemy)
 		{
-			enemy->enemyFSM->OnDamageProcess();
+			enemy->enemyFSM->OnDamageProcess(fpsCam->GetForwardVector());
 		}
 	}
 }
-
