@@ -9,6 +9,7 @@
 #include <DrawDebugHelpers.h>
 #include "FPS_TUE.h"
 #include <TimerManager.h>
+#include <AIController.h>
 
 // Sets default values for this component's properties
 UEnemyFSM::UEnemyFSM()
@@ -29,6 +30,8 @@ void UEnemyFSM::BeginPlay()
 	me = Cast<AEnemy>(GetOwner());
 
 	target = Cast<AFPSPlayer>(UGameplayStatics::GetActorOfClass(GetWorld(), AFPSPlayer::StaticClass()));
+
+	ai = Cast<AAIController>(me->GetController());
 
 	//TArray<AActor*> actors;
 	//UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFPSPlayer::StaticClass(), actors);
@@ -118,10 +121,14 @@ void UEnemyFSM::MoveState()
 	direction.Normalize();
 	//me->GetCharacterMovement()->bOrientRotationToMovement = true;
 	
-
+	// AI 길찾기 기능을 이용하여 이동시키자
+	if (ai)
+	{
+		ai->MoveToActor(target);
+	}
 	// 3. 이동하고 싶다.
 	// -> Character Movement 를 이용하여 이동
-	me->AddMovementInput(direction, 1);
+	//me->AddMovementInput(direction, 1);
 
 	// 바라보고 싶은 방향
 	FRotator targetRot = direction.ToOrientationRotator();
@@ -130,7 +137,7 @@ void UEnemyFSM::MoveState()
 	myRot = FMath::Lerp(myRot, targetRot, 5 * GetWorld()->DeltaTimeSeconds);
 	
 	// -> 부드럽게 회전하고 싶다.
-	me->SetActorRotation(myRot);
+	//me->SetActorRotation(myRot);
 
 
 	// 공격범위 시각화 해보자
@@ -143,6 +150,8 @@ void UEnemyFSM::MoveState()
 		// 3. 상태를 공격으로 전환하고 싶다.
 		m_state = EEnemyState::Attack;
 		currentTime = attackDelayTime;
+
+		ai->StopMovement();
 	}
 	/*FVector P0 = GetOwner()->GetActorLocation();
 	FVector P = P0 + direction * 500 * GetWorld()->DeltaTimeSeconds;
@@ -228,6 +237,8 @@ void UEnemyFSM::DieState()
 // 넉백(Knockback) 처리를 해보자
 void UEnemyFSM::OnDamageProcess(FVector shootDirection)
 {
+	ai->StopMovement();
+
 	// 피격 받았을 때 hp 를 감소시키고 0 이하면 상태를 Die 로 바꾸고 없애버리자
 	// 1. hp 가 감소했으니까
 	hp--;

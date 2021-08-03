@@ -20,6 +20,8 @@ AEnemy::AEnemy()
 		GetMesh()->SetRelativeLocation(FVector(0, 0, -80));
 		GetMesh()->SetRelativeRotation(FRotator(0, -90, 0));
 	}
+
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 // Called when the game starts or when spawned

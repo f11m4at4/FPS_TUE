@@ -82,6 +82,10 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = KNOCKBACK)
 	float knockbackRange = 20;
+
+	// 자동 길찾기 하기위한 Enemy 의 AIController 를 기억
+	UPROPERTY()
+	class AAIController* ai;
 	
 private:
 	void IdleState();
