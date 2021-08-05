@@ -12,6 +12,7 @@
 #include <AIController.h>
 #include "EnemyAnimInstance.h"
 #include <NavigationSystem.h>
+#include <GameFramework/CharacterMovementComponent.h>
 
 // Sets default values for this component's properties
 UEnemyFSM::UEnemyFSM()
@@ -74,6 +75,9 @@ void UEnemyFSM::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 	case EEnemyState::Idle:
 		IdleState();
 		break;
+	case EEnemyState::Patrol:
+		PatrolState();
+		break;
 	case EEnemyState::Move:
 		MoveState();
 		break;
@@ -100,16 +104,48 @@ void UEnemyFSM::IdleState()
 	// -> 만약 경과시간이 대기시간을 초과하였다면
 	if(currentTime > idleDelayTime)
 	{
-		// 3. 상태를 Move 로 전환하고 싶다.
-		m_state = EEnemyState::Move;
+		// 3. 상태를 Patrol 로 전환하고 싶다.
+		m_state = EEnemyState::Patrol;
 		// 4. 다른 곳에서 사용할 수 있으니 경과시간 초기화 시켜주자
 		currentTime = 0;
+		me->GetCharacterMovement()->MaxWalkSpeed = 200;
+		GetTargetLocation(me, 1000, randomPos);
 
-		FNavLocation loc;
-		bool result = ns->GetRandomReachablePointInRadius(me->GetActorLocation(), 1000, loc);
-		randomPos = loc.Location;
 		// 5. 애니메이션 상태도 Move 로 바꾸자
 		//anim->isMoving = true;
+	}
+}
+
+void UEnemyFSM::PatrolState()
+{
+	// 타겟과의 거리가 invoker 1000 이내로 들어오면 상태를 Move 로 전환해주자
+	float distance = FVector::Dist(target->GetActorLocation(), me->GetActorLocation());
+	if (distance < 1000)
+	{
+		m_state = EEnemyState::Move;
+		me->GetCharacterMovement()->MaxWalkSpeed = 400;
+		return;
+	}
+
+	// 목적지로 이동해라.
+	EPathFollowingRequestResult::Type r = ai->MoveToLocation(randomPos);
+	// 목적지에 도착했으면 다른 랜덤 위치 찾도록 하자
+	if (r == EPathFollowingRequestResult::AlreadyAtGoal)
+	{
+		GetTargetLocation(me, 1000, randomPos);
+	}
+	
+	aiDebugActor->SetActorLocation(randomPos);
+
+	// 속도가 값으로 isMoving 에 값을주자
+	// 애니메이션이 Move 가 아닐때 그리고 속도가 있을 때 
+	if (anim->isMoving == false)
+	{
+		float velocity = me->GetVelocity().Size();
+		if (velocity > 0.1f)
+		{
+			anim->isMoving = true;
+		}
 	}
 }
 
@@ -119,37 +155,16 @@ void UEnemyFSM::IdleState()
 // 필요속성 : 공격범위
 void UEnemyFSM::MoveState()
 {
-	// 타겟방향으로 이동하고 싶다.
-
-	// 2. 방향이 필요 direction = target - me
-	FVector direction = target->GetActorLocation() - me->GetActorLocation();
-	// 1. 타겟과의 거리를 알아야한다.
-	float distance = direction.Size();
-
-	direction.Normalize();
-	//me->GetCharacterMovement()->bOrientRotationToMovement = true;
-
-	// 타겟과의 거리가 일정범위안에 들어오면 타겟을 따라다니고
-	if (distance < 1000)
+	
+	EPathFollowingRequestResult::Type r = ai->MoveToActor(target);
+	// 만약 갈곳을 못찾으면 상태를 Patrol 로 변경시켜주자
+	if (r == EPathFollowingRequestResult::Failed)
 	{
-		// 갈수 있는 곳인지 체크가 필요
-		ai->MoveToActor(target);
+		m_state = EEnemyState::Patrol;
+		GetTargetLocation(me, 1000, randomPos);
+		me->GetCharacterMovement()->MaxWalkSpeed = 200;
+		return;
 	}
-	// 그렇지 않으면 랜덤한 위치 하나 정해서 이동하자.
-	else
-	{
-		// 목적지로 이동해라.
-		EPathFollowingRequestResult::Type r = ai->MoveToLocation(randomPos);
-		// 목적지에 도착했으면 다른 랜덤 위치 찾도록 하자
-		if(r == EPathFollowingRequestResult::AlreadyAtGoal)
-		{
-			FNavLocation loc;
-			bool result = ns->GetRandomReachablePointInRadius(me->GetActorLocation(), 1000, loc);
-			randomPos = loc.Location;
-		}
-	}
-
-	aiDebugActor->SetActorLocation(randomPos);
 
 	// 속도가 값으로 isMoving 에 값을주자
 	// 애니메이션이 Move 가 아닐때 그리고 속도가 있을 때 
@@ -165,6 +180,10 @@ void UEnemyFSM::MoveState()
 
 	// 공격범위 시각화 해보자
 	DrawDebugSphere(GetWorld(), me->GetActorLocation(), attackRange, 10, FColor::Red);
+
+	// 타겟방향으로 이동하고 싶다.
+	// 1. 타겟과의 거리를 알아야한다.
+	float distance = FVector::Dist(target->GetActorLocation(), me->GetActorLocation());
 
 	// 타겟이 공격범위 안에 들어오면 공격상태로 전환하고 싶다.
 	// 2. 타겟과의 거리가 공격범위 안에 들어왔으니까
