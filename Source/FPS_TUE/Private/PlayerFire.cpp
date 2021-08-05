@@ -9,6 +9,7 @@
 #include <Camera/CameraComponent.h>
 #include "Enemy.h"
 #include "EnemyFSM.h"
+#include "FPS_TUE.h"
 
 // Sets default values for this component's properties
 UPlayerFire::UPlayerFire()
@@ -63,6 +64,13 @@ void UPlayerFire::SetupPlayerInputComponent(class UInputComponent* PlayerInputCo
 // 특정 액터는 충돌에서 무시되게 하고 싶다.
 void UPlayerFire::Fire()
 {
+	//FHitResult h;
+	//GetWorld()->GetFirstPlayerController()->GetHitResultUnderCursorByChannel(UEngineTypes::ConvertToTraceType(ECC_Visibility), true, h);
+	//if (h.GetActor())
+	//{
+	//	PRINTLOG(TEXT("hitobj : %s"), *h.GetActor()->GetName());
+	//}
+
 	// 총알을 발사하고 싶다.
 	//GetWorld()->SpawnActor<ABullet>(bulletFactory, firePosition->GetComponentLocation(), firePosition->GetComponentRotation());
 

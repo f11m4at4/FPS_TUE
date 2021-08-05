@@ -21,7 +21,17 @@ AEnemy::AEnemy()
 		GetMesh()->SetRelativeRotation(FRotator(0, -90, 0));
 	}
 
+
+	// 애니메이션 BP 동적으로 할당
+	ConstructorHelpers::FClassFinder<UAnimInstance> tempAnim(TEXT("AnimBlueprint'/Game/Blueprints/ABP_Enemy.ABP_Enemy_C'"));
+	if (tempAnim.Succeeded())
+	{
+		GetMesh()->SetAnimClass(tempAnim.Class);
+	}
+
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	
 }
 
 // Called when the game starts or when spawned

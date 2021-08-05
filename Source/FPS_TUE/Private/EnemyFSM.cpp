@@ -10,6 +10,8 @@
 #include "FPS_TUE.h"
 #include <TimerManager.h>
 #include <AIController.h>
+#include "EnemyAnimInstance.h"
+#include <NavigationSystem.h>
 
 // Sets default values for this component's properties
 UEnemyFSM::UEnemyFSM()
@@ -33,6 +35,10 @@ void UEnemyFSM::BeginPlay()
 
 	ai = Cast<AAIController>(me->GetController());
 
+	// 사용할 animInstance 할당
+	anim = Cast<UEnemyAnimInstance>(me->GetMesh()->GetAnimInstance());
+
+	ns = UNavigationSystemV1::GetNavigationSystem(GetWorld());
 	//TArray<AActor*> actors;
 	//UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFPSPlayer::StaticClass(), actors);
 
@@ -98,6 +104,12 @@ void UEnemyFSM::IdleState()
 		m_state = EEnemyState::Move;
 		// 4. 다른 곳에서 사용할 수 있으니 경과시간 초기화 시켜주자
 		currentTime = 0;
+
+		FNavLocation loc;
+		bool result = ns->GetRandomReachablePointInRadius(me->GetActorLocation(), 1000, loc);
+		randomPos = loc.Location;
+		// 5. 애니메이션 상태도 Move 로 바꾸자
+		//anim->isMoving = true;
 	}
 }
 
@@ -108,10 +120,6 @@ void UEnemyFSM::IdleState()
 void UEnemyFSM::MoveState()
 {
 	// 타겟방향으로 이동하고 싶다.
-	// 1. 타겟이 있어야 한다.
-	// 	   -> 에디터에 노출해서 얻어오는 방법
-	// 	   -> 동적으로 찾아서 얻어오는 방법
-	
 
 	// 2. 방향이 필요 direction = target - me
 	FVector direction = target->GetActorLocation() - me->GetActorLocation();
@@ -120,32 +128,47 @@ void UEnemyFSM::MoveState()
 
 	direction.Normalize();
 	//me->GetCharacterMovement()->bOrientRotationToMovement = true;
-	
-	// AI 길찾기 기능을 이용하여 이동시키자
-	if (ai)
+
+	// 타겟과의 거리가 일정범위안에 들어오면 타겟을 따라다니고
+	if (distance < 1000)
 	{
+		// 갈수 있는 곳인지 체크가 필요
 		ai->MoveToActor(target);
 	}
-	// 3. 이동하고 싶다.
-	// -> Character Movement 를 이용하여 이동
-	//me->AddMovementInput(direction, 1);
+	// 그렇지 않으면 랜덤한 위치 하나 정해서 이동하자.
+	else
+	{
+		// 목적지로 이동해라.
+		EPathFollowingRequestResult::Type r = ai->MoveToLocation(randomPos);
+		// 목적지에 도착했으면 다른 랜덤 위치 찾도록 하자
+		if(r == EPathFollowingRequestResult::AlreadyAtGoal)
+		{
+			FNavLocation loc;
+			bool result = ns->GetRandomReachablePointInRadius(me->GetActorLocation(), 1000, loc);
+			randomPos = loc.Location;
+		}
+	}
 
-	// 바라보고 싶은 방향
-	FRotator targetRot = direction.ToOrientationRotator();
-	FRotator myRot = me->GetActorRotation();
+	aiDebugActor->SetActorLocation(randomPos);
 
-	myRot = FMath::Lerp(myRot, targetRot, 5 * GetWorld()->DeltaTimeSeconds);
+	// 속도가 값으로 isMoving 에 값을주자
+	// 애니메이션이 Move 가 아닐때 그리고 속도가 있을 때 
+	if (anim->isMoving == false)
+	{
+		float velocity = me->GetVelocity().Size();
+		if(velocity > 0.1f)
+		{
+			anim->isMoving = true;
+		}
+	}
 	
-	// -> 부드럽게 회전하고 싶다.
-	//me->SetActorRotation(myRot);
-
 
 	// 공격범위 시각화 해보자
 	DrawDebugSphere(GetWorld(), me->GetActorLocation(), attackRange, 10, FColor::Red);
 
 	// 타겟이 공격범위 안에 들어오면 공격상태로 전환하고 싶다.
 	// 2. 타겟과의 거리가 공격범위 안에 들어왔으니까
-	if(distance < attackRange)
+	if (distance < attackRange)
 	{
 		// 3. 상태를 공격으로 전환하고 싶다.
 		m_state = EEnemyState::Attack;
@@ -153,9 +176,6 @@ void UEnemyFSM::MoveState()
 
 		ai->StopMovement();
 	}
-	/*FVector P0 = GetOwner()->GetActorLocation();
-	FVector P = P0 + direction * 500 * GetWorld()->DeltaTimeSeconds;
-	GetOwner()->SetActorLocation(P, true);*/
 }
 
 // 일정시간에 한번씩 공격하고 싶다.
@@ -230,6 +250,15 @@ void UEnemyFSM::DamageState()
 void UEnemyFSM::DieState()
 {
 	
+}
+
+bool UEnemyFSM::GetTargetLocation(const AActor* targetActor, float radius, FVector& dest)
+{
+	FNavLocation loc;
+	bool result = ns->GetRandomReachablePointInRadius(targetActor->GetActorLocation(), radius, loc);
+	dest = loc.Location;
+	
+	return result;
 }
 
 // 피격을 받았을 때 처리할 함수	

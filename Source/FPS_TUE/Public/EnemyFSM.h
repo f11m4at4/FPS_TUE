@@ -87,6 +87,22 @@ public:
 	UPROPERTY()
 	class AAIController* ai;
 	
+	// Enemy 가 사용하고 있는 AnimInstance 기억
+	UPROPERTY()
+	class UEnemyAnimInstance* anim;
+
+	// 랜덤으로 길찾기 할 목저기
+	UPROPERTY()
+	FVector randomPos;
+
+	// 사용할 NavgationSystem 객체 기억
+	UPROPERTY()
+	class UNavigationSystemV1* ns;
+
+	// AI 가 랜덤으로 갈 위치확인 물체
+	UPROPERTY(EditAnywhere, Category=AI)
+	class AActor* aiDebugActor;
+
 private:
 	void IdleState();
 	void MoveState();
@@ -94,6 +110,8 @@ private:
 	void DamageState();
 	void DieState();
 
+	// 파라미터로 액터를 받아서 그 액터를 기준으로 갈수 있는 랜덤 위치 알려주는 함수
+	bool GetTargetLocation(const AActor* targetActor, float radius, FVector &dest);
 public:
 	// 피격을 받았을 때 처리할 함수	
 	void OnDamageProcess(FVector shootDirection);
