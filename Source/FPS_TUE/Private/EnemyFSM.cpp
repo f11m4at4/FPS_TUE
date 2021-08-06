@@ -116,11 +116,12 @@ void UEnemyFSM::IdleState()
 	}
 }
 
+// 거리는 가까워졌지만 그(Player) 위치로 갈수 없는 환경일 때는  Move 로 상태 전환하지 않는다.
 void UEnemyFSM::PatrolState()
 {
 	// 타겟과의 거리가 invoker 1000 이내로 들어오면 상태를 Move 로 전환해주자
 	float distance = FVector::Dist(target->GetActorLocation(), me->GetActorLocation());
-	if (distance < 1000)
+	if (distance < 1000 && CanMove())
 	{
 		m_state = EEnemyState::Move;
 		me->GetCharacterMovement()->MaxWalkSpeed = 400;
@@ -278,6 +279,45 @@ bool UEnemyFSM::GetTargetLocation(const AActor* targetActor, float radius, FVect
 	dest = loc.Location;
 	
 	return result;
+}
+
+// AI 가 이동할 때 최종 목적지(target) 에 갈수 있는지를 확인
+// -> AI 가 이동할 경로 데이터가 필요
+// -> 마지막 두점 위치를 표시보자
+// -> 마지막 경로 위치에서 target 쪽으로 LineTrace 쏴서 충돌체크
+// -> target 하고 충돌이 발생하면 이동 가능하다
+// -> 이동할 경로 시각화 (서비스)
+bool UEnemyFSM::CanMove()
+{
+	FPathFindingQuery query;
+	FAIMoveRequest req;
+	req.SetAcceptanceRadius(3);
+	req.SetGoalActor(target);
+	ai->BuildPathfindingQuery(req, query);
+	FPathFindingResult result = ns->FindPathSync(query);
+
+	TArray<FNavPathPoint> points = result.Path->GetPathPoints();
+
+	int32 num = points.Num();
+
+	PRINTLOG(TEXT("Path Num : %d"), num);
+
+	if(num > 1 && pathActors.Num() > 1)
+	{
+		// -> 마지막 두점 위치를 표시보자
+		for (int i=0;i< pathActors.Num();i++)
+		{
+			int32 index = num - (i + 1);
+			if (index < 0)
+			{
+				break;
+			}
+			// num 은 찾을 길 갯수
+			// 배열의 시작은 0부터 한다. 크기가 n 일때 마지막 원소는 n - 1 이된다.
+			pathActors[i]->SetActorLocation(points[index].Location);
+		}
+	}
+	return false;
 }
 
 // 피격을 받았을 때 처리할 함수	

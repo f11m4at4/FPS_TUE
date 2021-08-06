@@ -104,6 +104,10 @@ public:
 	UPROPERTY(EditAnywhere, Category=AI)
 	class AActor* aiDebugActor;
 
+	// 경로를 표시해줄 위치객체
+	UPROPERTY(EditAnywhere, Category=AI)
+	TArray<AActor*> pathActors;
+
 private:
 	void IdleState();
 	void PatrolState();
@@ -114,6 +118,9 @@ private:
 
 	// 파라미터로 액터를 받아서 그 액터를 기준으로 갈수 있는 랜덤 위치 알려주는 함수
 	bool GetTargetLocation(const AActor* targetActor, float radius, FVector &dest);
+
+	// 움직일 수 있는 상태인지 체크
+	bool CanMove();
 public:
 	// 피격을 받았을 때 처리할 함수	
 	void OnDamageProcess(FVector shootDirection);
