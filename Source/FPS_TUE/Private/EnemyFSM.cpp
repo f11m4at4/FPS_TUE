@@ -156,7 +156,8 @@ void UEnemyFSM::PatrolState()
 // 필요속성 : 공격범위
 void UEnemyFSM::MoveState()
 {
-	
+	CanMove();
+
 	EPathFollowingRequestResult::Type r = ai->MoveToActor(target);
 	// 만약 갈곳을 못찾으면 상태를 Patrol 로 변경시켜주자
 	if (r == EPathFollowingRequestResult::Failed)
@@ -289,6 +290,7 @@ bool UEnemyFSM::GetTargetLocation(const AActor* targetActor, float radius, FVect
 // -> 이동할 경로 시각화 (서비스)
 bool UEnemyFSM::CanMove()
 {
+	//1. 이동경로 가져오기
 	FPathFindingQuery query;
 	FAIMoveRequest req;
 	req.SetAcceptanceRadius(3);
@@ -317,6 +319,43 @@ bool UEnemyFSM::CanMove()
 			pathActors[i]->SetActorLocation(points[index].Location);
 		}
 	}
+	
+	// 갈수 있는 위치 시각화(선을 그려보자)
+	for (int i=1;i<num;i++)
+	{
+		// 두점 필요하다.
+		FVector point1 = points[i - 1].Location;
+		FVector point2 = points[i].Location;
+
+		DrawDebugLine(GetWorld(), point1, point2, FColor::Red, false, 0.1f, 10, 5);
+	}
+
+
+	// 2. 타겟 위치로 이동 가능한지 체크
+	// -> 마지막 경로 위치에서 target 쪽으로 LineTrace 쏴서 충돌체크
+	if (num > 0)
+	{
+		// -> 마지막 경로 위치에서 target 쪽으로 LineTrace 쏴서 충돌체크
+		// 1. 시작점 필요
+		FVector startPoint = points[num - 1].Location;
+		// 2. 끝점 필요
+		FVector endPoint = target->GetActorLocation();
+		// 3. 나(Enemy)는 제외
+		FCollisionQueryParams param;
+		param.AddIgnoredActor(me);
+		// 4. LineTrace 쏴서 충돌체크하고 싶다.
+		FHitResult hitInfo;
+		bool r = GetWorld()->LineTraceSingleByChannel(hitInfo, startPoint, endPoint, ECC_WorldStatic, param);
+
+		// 타겟위치로 이동가능하면 true 를 반환
+		// 5. 충돌 검출이 성공했고, 부딪힌 물체가 target 이면 이동가능
+		if (r && hitInfo.GetActor() == target)
+		{
+			return true;
+		}
+	}
+
+	// 이동 못함을 반환
 	return false;
 }
 
