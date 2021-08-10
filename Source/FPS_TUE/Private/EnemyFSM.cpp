@@ -40,6 +40,9 @@ void UEnemyFSM::BeginPlay()
 	anim = Cast<UEnemyAnimInstance>(me->GetMesh()->GetAnimInstance());
 
 	ns = UNavigationSystemV1::GetNavigationSystem(GetWorld());
+
+	m_state = EEnemyState::Idle;
+	anim->state = m_state;
 	//TArray<AActor*> actors;
 	//UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFPSPlayer::StaticClass(), actors);
 
@@ -106,6 +109,9 @@ void UEnemyFSM::IdleState()
 	{
 		// 3. 상태를 Patrol 로 전환하고 싶다.
 		m_state = EEnemyState::Patrol;
+		// 애니메이션 상태도 패트롤로 전환해라
+		anim->state = m_state;
+
 		// 4. 다른 곳에서 사용할 수 있으니 경과시간 초기화 시켜주자
 		currentTime = 0;
 		me->GetCharacterMovement()->MaxWalkSpeed = 200;
@@ -125,6 +131,9 @@ void UEnemyFSM::PatrolState()
 	{
 		m_state = EEnemyState::Move;
 		me->GetCharacterMovement()->MaxWalkSpeed = 400;
+
+		anim->state = m_state;
+
 		return;
 	}
 
@@ -138,16 +147,6 @@ void UEnemyFSM::PatrolState()
 	
 	aiDebugActor->SetActorLocation(randomPos);
 
-	// 속도가 값으로 isMoving 에 값을주자
-	// 애니메이션이 Move 가 아닐때 그리고 속도가 있을 때 
-	if (anim->isMoving == false)
-	{
-		float velocity = me->GetVelocity().Size();
-		if (velocity > 0.1f)
-		{
-			anim->isMoving = true;
-		}
-	}
 }
 
 // 1. 타겟방향으로 이동하고 싶다.
@@ -165,18 +164,9 @@ void UEnemyFSM::MoveState()
 		m_state = EEnemyState::Patrol;
 		GetTargetLocation(me, 1000, randomPos);
 		me->GetCharacterMovement()->MaxWalkSpeed = 200;
-		return;
-	}
 
-	// 속도가 값으로 isMoving 에 값을주자
-	// 애니메이션이 Move 가 아닐때 그리고 속도가 있을 때 
-	if (anim->isMoving == false)
-	{
-		float velocity = me->GetVelocity().Size();
-		if(velocity > 0.1f)
-		{
-			anim->isMoving = true;
-		}
+		anim->state = m_state;
+		return;
 	}
 	
 
@@ -383,6 +373,7 @@ void UEnemyFSM::OnDamageProcess(FVector shootDirection)
 	// 현재 내 위치에서 내가 맞은 방향으로 밀리면 되겠다.
 	// 밀릴 방향이 필요
 	//me->SetActorLocation(me->GetActorLocation() + shootDirection * knockback);
+	shootDirection.Z = 0;
 	knockbackPos = me->GetActorLocation() + shootDirection * knockback;
 
 	// 상태를 Damage 로 전환하고 싶다.

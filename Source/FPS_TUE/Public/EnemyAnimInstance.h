@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "EnemyFSM.h"
 #include "EnemyAnimInstance.generated.h"
 
 /**
@@ -15,6 +16,12 @@ class FPS_TUE_API UEnemyAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(VisibleAnywhere, Category=FSM, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, Category=FSM, BlueprintReadOnly)
 	bool isMoving = false;
+
+	UPROPERTY(EditAnywhere, Category = FSM, BlueprintReadOnly)
+	bool isPatrol = false;
+
+	UPROPERTY(EditAnywhere, Category = FSM, BlueprintReadOnly)
+	EEnemyState state;
 };
