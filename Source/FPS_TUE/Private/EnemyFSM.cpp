@@ -13,6 +13,7 @@
 #include "EnemyAnimInstance.h"
 #include <NavigationSystem.h>
 #include <GameFramework/CharacterMovementComponent.h>
+#include <Animation/AnimNode_StateMachine.h>
 
 // Sets default values for this component's properties
 UEnemyFSM::UEnemyFSM()
@@ -84,6 +85,7 @@ void UEnemyFSM::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompon
 	case EEnemyState::Move:
 		MoveState();
 		break;
+	case EEnemyState::AttackDelay:
 	case EEnemyState::Attack:
 		AttackState();
 		break;
@@ -157,6 +159,16 @@ void UEnemyFSM::MoveState()
 {
 	CanMove();
 
+	// 만약 애니메이션이 Attack 을 플레이하고 있으면
+	int32 index = anim->GetStateMachineIndex(TEXT("FSM"));
+	FAnimNode_StateMachine* sm = anim->GetStateMachineInstance(index);
+	// 만약 상태가 Attack 이라면
+	if(sm->GetCurrentStateName() == TEXT("Attack"))
+	{
+		// 아래 내용은 실행하지 않는다.
+		return;
+	}
+
 	EPathFollowingRequestResult::Type r = ai->MoveToActor(target);
 	// 만약 갈곳을 못찾으면 상태를 Patrol 로 변경시켜주자
 	if (r == EPathFollowingRequestResult::Failed)
@@ -182,8 +194,9 @@ void UEnemyFSM::MoveState()
 	if (distance < attackRange)
 	{
 		// 3. 상태를 공격으로 전환하고 싶다.
-		m_state = EEnemyState::Attack;
+		m_state = EEnemyState::AttackDelay;
 		currentTime = attackDelayTime;
+		anim->state = m_state;
 
 		ai->StopMovement();
 	}
@@ -194,6 +207,8 @@ void UEnemyFSM::MoveState()
 // 필요속성 : 공격대기시간
 void UEnemyFSM::AttackState()
 {
+	m_state = EEnemyState::AttackDelay;
+	anim->state = m_state;
 	// 일정시간에 한번씩 공격하고 싶다.
 	// 1. 시간이 흘렀으니까
 	currentTime += GetWorld()->DeltaTimeSeconds;
@@ -204,7 +219,14 @@ void UEnemyFSM::AttackState()
 		PRINTLOG(TEXT("Attack!!!"));
 		// 경과시간 초기화
 		currentTime = 0;
+		m_state = EEnemyState::Attack;
+		anim->state = m_state;
 	}
+
+	// 상대 쪽으로 회전하고 싶다.
+	FVector direction = target->GetActorLocation() - me->GetActorLocation();
+	direction.Normalize();
+	me->SetActorRotation(direction.ToOrientationRotator());
 
 	// 도망가면 상태를 Move 로 전환하고 싶다.
 	// -> 나와 타겟과의 거리가 공격범위를 벗어나면	
@@ -213,6 +235,7 @@ void UEnemyFSM::AttackState()
 	if (distance > attackRange)
 	{
 		m_state = EEnemyState::Move;
+		anim->state = m_state;
 	}
 }
 
