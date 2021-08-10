@@ -356,6 +356,9 @@ void UEnemyFSM::OnDamageProcess(FVector shootDirection)
 {
 	ai->StopMovement();
 
+	// 맞았을 때 상대를 바라보도록 처리하자
+	me->SetActorRotation((-shootDirection).ToOrientationRotator());
+
 	// 피격 받았을 때 hp 를 감소시키고 0 이하면 상태를 Die 로 바꾸고 없애버리자
 	// 1. hp 가 감소했으니까
 	hp--;
@@ -365,7 +368,7 @@ void UEnemyFSM::OnDamageProcess(FVector shootDirection)
 		// 3. 상태를 Die 로 바꾼다. 
 		m_state = EEnemyState::Die;
 		// 4. 없애버리자
-		me->Destroy();
+		anim->Die();
 		return;
 	}
 
@@ -380,6 +383,7 @@ void UEnemyFSM::OnDamageProcess(FVector shootDirection)
 	m_state = EEnemyState::Damage;
 	currentTime = 0;
 
+	anim->Hit();
 	// 알람맞춰 놓고 싶다.
 	// -> 피격 대기 시간만큼 기다리는 알람
 
