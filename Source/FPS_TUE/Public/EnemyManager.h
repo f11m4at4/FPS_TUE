@@ -29,6 +29,11 @@ public:
 public:
 	// 필요속성 : 생성시간, 경과시간, 적공장
 	UPROPERTY(EditAnywhere, Category=Setting)
+	float minTime = 4;
+	UPROPERTY(EditAnywhere, Category=Setting)
+	float maxTime = 10;
+
+	UPROPERTY()
 	float createTime = 2;
 
 	UPROPERTY(EditAnywhere, Category = Setting)

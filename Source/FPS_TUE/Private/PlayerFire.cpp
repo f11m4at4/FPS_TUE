@@ -10,6 +10,7 @@
 #include "Enemy.h"
 #include "EnemyFSM.h"
 #include "FPS_TUE.h"
+#include <Camera/CameraShakeBase.h>
 
 // Sets default values for this component's properties
 UPlayerFire::UPlayerFire()
@@ -65,7 +66,12 @@ void UPlayerFire::SetupPlayerInputComponent(class UInputComponent* PlayerInputCo
 void UPlayerFire::Fire()
 {
 	// 총쏠때 카메라 흔들어 주자
-	GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(cameraShake);
+	if(csInstance)
+	{
+		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StopCameraShake(csInstance, true);
+		csInstance = nullptr;
+	}
+	csInstance = GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(cameraShake);
 	//FHitResult h;
 	//GetWorld()->GetFirstPlayerController()->GetHitResultUnderCursorByChannel(UEngineTypes::ConvertToTraceType(ECC_Visibility), true, h);
 	//if (h.GetActor())
@@ -105,7 +111,10 @@ void UPlayerFire::Fire()
 		if (hitInfo.GetActor()->GetName().Contains(TEXT("Cube")))
 		{
 			auto comp = hitInfo.GetComponent();
-			comp->AddForceAtLocation(-hitInfo.ImpactNormal * bulletPower * comp->GetMass(), hitInfo.ImpactPoint);
+			if(comp->IsSimulatingPhysics())
+			{
+				comp->AddForceAtLocation(-hitInfo.ImpactNormal * bulletPower * comp->GetMass(), hitInfo.ImpactPoint);
+			}
 		}
 		// 만약 부딪힌 물체가 Enemy 이면, 
 		auto enemy = Cast<AEnemy>(hitInfo.GetActor());

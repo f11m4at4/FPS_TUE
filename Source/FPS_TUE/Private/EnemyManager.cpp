@@ -16,7 +16,9 @@ AEnemyManager::AEnemyManager()
 void AEnemyManager::BeginPlay()
 {
 	Super::BeginPlay();
-	
+		
+	// 생성시간 랜덤으로 초기화
+	createTime = FMath::RandRange(minTime, maxTime);
 }
 
 // Called every frame
@@ -33,6 +35,7 @@ void AEnemyManager::Tick(float DeltaTime)
 		// 3. 적을 만들고 싶다.
 		GetWorld()->SpawnActor<AEnemy>(enemyFactory, GetActorLocation(), FRotator(0, 0, 0));
 		currentTime = 0;
+		createTime = FMath::RandRange(minTime, maxTime);
 	}
 }
 
