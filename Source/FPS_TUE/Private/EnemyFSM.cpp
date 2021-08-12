@@ -14,6 +14,7 @@
 #include <NavigationSystem.h>
 #include <GameFramework/CharacterMovementComponent.h>
 #include <Animation/AnimNode_StateMachine.h>
+#include <Components/CapsuleComponent.h>
 
 // Sets default values for this component's properties
 UEnemyFSM::UEnemyFSM()
@@ -147,7 +148,7 @@ void UEnemyFSM::PatrolState()
 		GetTargetLocation(me, 1000, randomPos);
 	}
 	
-	aiDebugActor->SetActorLocation(randomPos);
+	//aiDebugActor->SetActorLocation(randomPos);
 
 }
 
@@ -183,7 +184,10 @@ void UEnemyFSM::MoveState()
 	
 
 	// 공격범위 시각화 해보자
-	DrawDebugSphere(GetWorld(), me->GetActorLocation(), attackRange, 10, FColor::Red);
+	if (isAIPathShow)
+	{
+		DrawDebugSphere(GetWorld(), me->GetActorLocation(), attackRange, 10, FColor::Red);
+	}
 
 	// 타겟방향으로 이동하고 싶다.
 	// 1. 타겟과의 거리를 알아야한다.
@@ -317,32 +321,34 @@ bool UEnemyFSM::CanMove()
 
 	PRINTLOG(TEXT("Path Num : %d"), num);
 
-	if(num > 1 && pathActors.Num() > 1)
-	{
-		// -> 마지막 두점 위치를 표시보자
-		for (int i=0;i< pathActors.Num();i++)
-		{
-			int32 index = num - (i + 1);
-			if (index < 0)
-			{
-				break;
-			}
-			// num 은 찾을 길 갯수
-			// 배열의 시작은 0부터 한다. 크기가 n 일때 마지막 원소는 n - 1 이된다.
-			pathActors[i]->SetActorLocation(points[index].Location);
-		}
-	}
+	//if(num > 1 && pathActors.Num() > 1)
+	//{
+	//	// -> 마지막 두점 위치를 표시보자
+	//	for (int i=0;i< pathActors.Num();i++)
+	//	{
+	//		int32 index = num - (i + 1);
+	//		if (index < 0)
+	//		{
+	//			break;
+	//		}
+	//		// num 은 찾을 길 갯수
+	//		// 배열의 시작은 0부터 한다. 크기가 n 일때 마지막 원소는 n - 1 이된다.
+	//		pathActors[i]->SetActorLocation(points[index].Location);
+	//	}
+	//}
 	
 	// 갈수 있는 위치 시각화(선을 그려보자)
-	for (int i=1;i<num;i++)
+	if(isAIPathShow)
 	{
-		// 두점 필요하다.
-		FVector point1 = points[i - 1].Location;
-		FVector point2 = points[i].Location;
+		for (int i=1;i<num;i++)
+		{
+			// 두점 필요하다.
+			FVector point1 = points[i - 1].Location;
+			FVector point2 = points[i].Location;
 
-		DrawDebugLine(GetWorld(), point1, point2, FColor::Red, false, 0.1f, 10, 5);
+			DrawDebugLine(GetWorld(), point1, point2, FColor::Red, false, 0.1f, 10, 5);
+		}
 	}
-
 
 	// 2. 타겟 위치로 이동 가능한지 체크
 	// -> 마지막 경로 위치에서 target 쪽으로 LineTrace 쏴서 충돌체크
@@ -375,8 +381,15 @@ bool UEnemyFSM::CanMove()
 // 피격을 받았을 때 처리할 함수	
 // 피격 받았을 때 hp 를 감소시키고 0 이하면 상태를 Die 로 바꾸고 없애버리자
 // 넉백(Knockback) 처리를 해보자
+// 죽었을 때 총에 계속 맞지 않도록 처리하고 싶다.
 void UEnemyFSM::OnDamageProcess(FVector shootDirection)
 {
+	// hp 가 이미 0 이하면 => 이미 죽었다면
+	if(m_state == EEnemyState::Die)
+	{
+		// 아래 내용은 처리하고 싶지 않다.
+		return;
+	}
 	ai->StopMovement();
 
 	// 맞았을 때 상대를 바라보도록 처리하자
@@ -392,6 +405,10 @@ void UEnemyFSM::OnDamageProcess(FVector shootDirection)
 		m_state = EEnemyState::Die;
 		// 4. 없애버리자
 		anim->Die();
+
+		// 충돌체를 꺼주자
+		me->GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		me->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		return;
 	}
 

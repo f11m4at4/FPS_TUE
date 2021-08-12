@@ -109,6 +109,10 @@ public:
 	UPROPERTY(EditAnywhere, Category=AI)
 	TArray<AActor*> pathActors;
 
+	// 경로 시각화 할지 말지 여부
+	UPROPERTY(EditAnywhere, Category = Debug)
+	bool isAIPathShow = false;
+
 private:
 	void IdleState();
 	void PatrolState();

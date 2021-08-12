@@ -64,6 +64,8 @@ void UPlayerFire::SetupPlayerInputComponent(class UInputComponent* PlayerInputCo
 // 특정 액터는 충돌에서 무시되게 하고 싶다.
 void UPlayerFire::Fire()
 {
+	// 총쏠때 카메라 흔들어 주자
+	GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(cameraShake);
 	//FHitResult h;
 	//GetWorld()->GetFirstPlayerController()->GetHitResultUnderCursorByChannel(UEngineTypes::ConvertToTraceType(ECC_Visibility), true, h);
 	//if (h.GetActor())

@@ -30,6 +30,9 @@ public:
 
 	void Fire();
 
+	// 총쏠때 카메라 흔들어줄 애셋설정
+	UPROPERTY(EditAnywhere, Category=CameraShake)
+	TSubclassOf<class UCameraShakeBase> cameraShake;
 public:
 	// 필요속성 : 소유액터
 	UPROPERTY()
